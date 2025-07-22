@@ -34,8 +34,8 @@ def euclidean_dist(a: pd.Series | np.ndarray,
         Euclidean distance.
     """
     # zero-copy extraction of the underlying ndarray
-    a_arr = a.to_numpy(copy=False) if isinstance(a, pd.Series) else np.asarray(a)
-    b_arr = b.to_numpy(copy=False) if isinstance(b, pd.Series) else np.asarray(b)
+    a_arr = a.to_numpy(copy=True) if isinstance(a, pd.Series) else np.asarray(a)
+    b_arr = b.to_numpy(copy=True) if isinstance(b, pd.Series) else np.asarray(b)
 
     return float(np.linalg.norm(a_arr.astype(float) - b_arr.astype(float), ord=2))
 
@@ -60,13 +60,13 @@ def heom_dist(a_num: pd.Series | np.ndarray,
     """
     # ----- numeric sub-distance ------------------------------------------------
     if d_num:
-        a_n = a_num.to_numpy(copy=False) if isinstance(a_num, pd.Series) else np.asarray(a_num)
-        b_n = b_num.to_numpy(copy=False) if isinstance(b_num, pd.Series) else np.asarray(b_num)
+        a_n = a_num.to_numpy(copy=True) if isinstance(a_num, pd.Series) else np.asarray(a_num)
+        b_n = b_num.to_numpy(copy=True) if isinstance(b_num, pd.Series) else np.asarray(b_num)
 
-        a_n = a_n.astype(float, copy=False)
-        b_n = b_n.astype(float, copy=False)
+        a_n = a_n.astype(float, copy=True)
+        b_n = b_n.astype(float, copy=True)
 
-        ranges = np.asarray(ranges_num, dtype=float, copy=False)
+        ranges = np.asarray(ranges_num, dtype=float, copy=True)
         # Avoid division by zero by substituting 1 for degenerate ranges
         ranges_safe = np.where(ranges > _EPS, ranges, 1.0)
 
@@ -77,8 +77,8 @@ def heom_dist(a_num: pd.Series | np.ndarray,
 
     # ----- categorical sub-distance -------------------------------------------
     if d_nom:
-        a_c = a_nom.to_numpy(copy=False) if isinstance(a_nom, pd.Series) else np.asarray(a_nom)
-        b_c = b_nom.to_numpy(copy=False) if isinstance(b_nom, pd.Series) else np.asarray(b_nom)
+        a_c = a_nom.to_numpy(copy=True) if isinstance(a_nom, pd.Series) else np.asarray(a_nom)
+        b_c = b_nom.to_numpy(copy=True) if isinstance(b_nom, pd.Series) else np.asarray(b_nom)
 
         dist_cat = np.count_nonzero(a_c != b_c)
     else:          # no categorical features
@@ -98,7 +98,7 @@ def overlap_dist(a: pd.Series | np.ndarray,
     Hamming (overlap) distance between two categorical 1-D vectors.
     `d` is accepted for API compatibility but ignored.
     """
-    a_arr = a.to_numpy(copy=False) if isinstance(a, pd.Series) else np.asarray(a)
-    b_arr = b.to_numpy(copy=False) if isinstance(b, pd.Series) else np.asarray(b)
+    a_arr = a.to_numpy(copy=True) if isinstance(a, pd.Series) else np.asarray(a)
+    b_arr = b.to_numpy(copy=True) if isinstance(b, pd.Series) else np.asarray(b)
 
     return float(np.count_nonzero(a_arr != b_arr))

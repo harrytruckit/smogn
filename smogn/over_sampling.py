@@ -370,22 +370,38 @@ def over_sampling(
                                     synth_matrix[
                                         index_gaus, x] = data.iloc[0, x]
                                 else:
-                                    probs = [None] * len(
-                                        data.iloc[:, x].unique())
+                                    ########### OLD CODE ###########
+                                    # probs = [None] * len(
+                                    #     data.iloc[:, x].unique())
                                     
-                                    for z in range(len(
-                                        data.iloc[:, x].unique())):
-                                        probs[z] = len(
-                                            np.where(data.iloc[
-                                                :, x] == data.iloc[:, x][z]))
-                                     ## set random seed
-                                    if seed:
-                                        rd.seed(a = seed)
+                                    # for z in range(len(
+                                    #     data.iloc[:, x].unique())):
+                                    #     probs[z] = len(
+                                    #         np.where(data.iloc[
+                                    #             :, x] == data.iloc[:, x][z]))
+                                    #  ## set random seed
+                                    # if seed:
+                                    #     rd.seed(a = seed)
                         
-                                    synth_matrix[index_gaus, x] = rd.choices(
-                                        population = data.iloc[:, x].unique(), 
-                                        weights = probs, 
-                                        k = 1)[0]
+                                    # synth_matrix[index_gaus, x] = rd.choices(
+                                    #     population = data.iloc[:, x].unique(), 
+                                    #     weights = probs, 
+                                    #     k = 1)[0]
+                                    ########### OLD CODE ###########
+
+                                    # build frequency-weighted sampling distribution for this column
+
+                                    ########### NEW CODE ###########
+                                    values, counts = np.unique(data.iloc[:, x].to_numpy(), return_counts=True)
+
+                                    # optional: set random seed once per column
+                                    if seed is not None:
+                                        rd.seed(seed)
+
+                                    # draw one synthetic category, store scalar not list
+                                    synthetic_val = rd.choices(population=values, weights=counts, k=1)[0]
+                                    synth_matrix[index_gaus, x] = synthetic_val
+                                    ########### NEW CODE ###########
     
     if n_synth > 0:
         count = 0
@@ -519,23 +535,40 @@ def over_sampling(
                                 synth_matrix[
                                     x_synth * n + count, x] = data.iloc[0, x]
                             else:
-                                probs = [None] * len(data.iloc[:, x].unique())
+
+                                ########## OLD CODE ###########
+                                # probs = [None] * len(data.iloc[:, x].unique())
                                 
-                                for z in range(len(data.iloc[:, x].unique())):
-                                    probs[z] = len(np.where(
-                                        data.iloc[:, x] == data.iloc[:, x][z])
-                                    )
+                                # for z in range(len(data.iloc[:, x].unique())):
+                                #     probs[z] = len(np.where(
+                                #         data.iloc[:, x] == data.iloc[:, x][z])
+                                #     )
                                 
-                                ## set random seed
-                                if seed:
-                                    rd.seed(a = seed)
+                                # ## set random seed
+                                # if seed:
+                                #     rd.seed(a = seed)
                                 
-                                synth_matrix[
-                                    x_synth * n + count, x] = rd.choices(
-                                        population = data.iloc[:, x].unique(), 
-                                        weights = probs, 
-                                        k = 1
-                                    )[0]
+                                # synth_matrix[
+                                #     x_synth * n + count, x] = rd.choices(
+                                #         population = data.iloc[:, x].unique(), 
+                                #         weights = probs, 
+                                #         k = 1
+                                #     )[0]
+                                ########## OLD CODE ###########
+
+                                ########### NEW CODE ###########
+                                values, counts = np.unique(data.iloc[:, x].to_numpy(), return_counts=True)
+
+                                # optional: set random seed once per column
+                                if seed is not None:
+                                    rd.seed(seed)
+
+                                # draw one synthetic category, store scalar not list
+                                synthetic_val = rd.choices(population=values, weights=counts, k=1)[0]
+                                synth_matrix[x_synth * n + count, x] = synthetic_val
+                                ########### NEW CODE ###########
+                                
+
             
             ## close loop counter
             count = count + 1
