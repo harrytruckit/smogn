@@ -280,12 +280,47 @@ def over_sampling(
                     
                     ## generate synthetic y response variable by
                     ## inverse distance weighted
-                    for z in feat_list_num:
-                        a = abs(data.iloc[i, z] - synth_matrix[
-                            i * x_synth + j, z]) / feat_ranges[z]
-                        b = abs(data.iloc[knn_matrix[
-                            i, neigh], z] - synth_matrix[
-                            i * x_synth + j, z]) / feat_ranges[z]
+                    # for z in feat_list_num:
+                    #     a = abs(data.iloc[i, z] - synth_matrix[
+                    #         i * x_synth + j, z]) / feat_ranges[z]
+                    #     b = abs(data.iloc[knn_matrix[
+                    #         i, neigh], z] - synth_matrix[
+                    #         i * x_synth + j, z]) / feat_ranges[z]
+                    row_idx = i * x_synth + j
+                    # ---------------------------------------------------------------
+                    # REPLACEMENT for the old "for z in feat_list_num:" loop
+                    # ---------------------------------------------------------------
+                    # diff_i   : L1 distance between original row i and the synthetic row
+                    # diff_nei : L1 distance between neighbour and the synthetic row
+                    # Both are normalised by the feature ranges before summing.
+
+                    diff_i   = (data.iloc[i, feat_list_num]
+                                - synth_matrix[row_idx, feat_list_num]).abs()
+
+                    diff_nei = (data.iloc[knn_matrix[i, neigh], feat_list_num]
+                                - synth_matrix[row_idx, feat_list_num]).abs()
+
+                    a = (diff_i   / np.take(feat_ranges, feat_list_num)).sum()
+                    b = (diff_nei / np.take(feat_ranges, feat_list_num)).sum()
+
+                    # add nominal mismatches
+                    if feat_list_nom:
+                        a += (data.iloc[i, feat_list_nom]
+                            != synth_matrix[row_idx, feat_list_nom]).sum()
+                        b += (data.iloc[knn_matrix[i, neigh], feat_list_nom]
+                            != synth_matrix[row_idx, feat_list_nom]).sum()
+
+                    # protect against divide-by-zero
+                    denom = a + b
+                    if denom < 1e-12:            # rows identical in *all* features
+                        synth_matrix[row_idx, d - 1] = 0.5 * (
+                            data.iloc[i, d - 1] + data.iloc[knn_matrix[i, neigh], d - 1]
+                        )
+                    else:
+                        synth_matrix[row_idx, d - 1] = (
+                            b * data.iloc[i, d - 1] + a * data.iloc[knn_matrix[i, neigh], d - 1]
+                        ) / denom
+                    # ---------------------------------------------------------------
                     
                     if len(feat_list_nom) > 0:
                         a = a + sum(data.iloc[
@@ -331,7 +366,7 @@ def over_sampling(
                                     size = 1) * t_pert)
                             
                             if x in feat_list_nom:
-                                if len(data.iloc[:, x].unique() == 1):
+                                if len(data.iloc[:, x].unique()) == 1:
                                     synth_matrix[
                                         index_gaus, x] = data.iloc[0, x]
                                 else:
@@ -350,7 +385,7 @@ def over_sampling(
                                     synth_matrix[index_gaus, x] = rd.choices(
                                         population = data.iloc[:, x].unique(), 
                                         weights = probs, 
-                                        k = 1)
+                                        k = 1)[0]
     
     if n_synth > 0:
         count = 0
@@ -395,11 +430,50 @@ def over_sampling(
                 
                 ## generate synthetic y response variable by
                 ## inverse distance weighted
-                for z in feat_list_num:
-                    a = abs(data.iloc[i, z] - synth_matrix[
-                        x_synth * n + count, z]) / feat_ranges[z]
-                    b = abs(data.iloc[knn_matrix[i, neigh], z] - synth_matrix[
-                        x_synth * n + count, z]) / feat_ranges[z]
+                # for z in feat_list_num:
+                #     a = abs(data.iloc[i, z] - synth_matrix[
+                #         x_synth * n + count, z]) / feat_ranges[z]
+                #     b = abs(data.iloc[knn_matrix[i, neigh], z] - synth_matrix[
+                #         x_synth * n + count, z]) / feat_ranges[z]
+
+                row_idx = x_synth * n + count          # <── add this
+
+                # ---------------------------------------------------------------
+                # REPLACEMENT for the old "for z in feat_list_num:" loop
+                # ---------------------------------------------------------------
+                # diff_i   : L1 distance between original row i and the synthetic row
+                # diff_nei : L1 distance between neighbour and the synthetic row
+                # Both are normalised by the feature ranges before summing.
+
+                diff_i   = (data.iloc[i, feat_list_num]
+                            - synth_matrix[row_idx, feat_list_num]).abs()
+
+                diff_nei = (data.iloc[knn_matrix[i, neigh], feat_list_num]
+                            - synth_matrix[row_idx, feat_list_num]).abs()
+
+                a = (diff_i   / np.take(feat_ranges, feat_list_num)).sum()
+                b = (diff_nei / np.take(feat_ranges, feat_list_num)).sum()
+
+                # add nominal mismatches
+                if feat_list_nom:
+                    a += (data.iloc[i, feat_list_nom]
+                        != synth_matrix[row_idx, feat_list_nom]).sum()
+                    b += (data.iloc[knn_matrix[i, neigh], feat_list_nom]
+                        != synth_matrix[row_idx, feat_list_nom]).sum()
+
+                # protect against divide-by-zero
+                denom = a + b
+                if denom < 1e-12:            # rows identical in *all* features
+                    synth_matrix[row_idx, d - 1] = 0.5 * (
+                        data.iloc[i, d - 1] + data.iloc[knn_matrix[i, neigh], d - 1]
+                    )
+                else:
+                    synth_matrix[row_idx, d - 1] = (
+                        b * data.iloc[i, d - 1] + a * data.iloc[knn_matrix[i, neigh], d - 1]
+                    ) / denom
+                # ---------------------------------------------------------------
+
+
                 
                 if len(feat_list_nom) > 0:
                     a = a + sum(data.iloc[i, feat_list_nom] != synth_matrix[
@@ -441,7 +515,7 @@ def over_sampling(
                                 size = 1) * t_pert)
                         
                         if x in feat_list_nom:
-                            if len(data.iloc[:, x].unique() == 1):
+                            if len(data.iloc[:, x].unique()) == 1:
                                 synth_matrix[
                                     x_synth * n + count, x] = data.iloc[0, x]
                             else:
@@ -461,7 +535,7 @@ def over_sampling(
                                         population = data.iloc[:, x].unique(), 
                                         weights = probs, 
                                         k = 1
-                                    )
+                                    )[0]
             
             ## close loop counter
             count = count + 1
